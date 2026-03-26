@@ -279,13 +279,28 @@ public class GuardrailTestCase extends APIMIntegrationBaseTest {
             log.warn("Could not delete AI service provider: " + e.getMessage());
         }
 
+        // Aggressive WireMock cleanup - reset all stubs and connections
         if (wireMockServer != null) {
             try {
+                log.info("###===### Cleaning up WireMock server on port " + mockPort);
+                // Reset all stubs to clear any cached state
+                wireMockServer.resetAll();
+                log.info("###===### WireMock stubs cleared");
+                
+                // Stop the server
                 wireMockServer.stop();
+                log.info("###===### WireMock server stopped");
+                
+                // Wait for server to fully shutdown
+                Thread.sleep(1000);
+                
                 wireMockServer = null;
+                
+                // Ensure port is fully released
                 ensurePortIsReleased(mockPort);
+                log.info("###===### Port " + mockPort + " released");
             } catch (Exception e) {
-                log.warn("Error stopping WireMock server: " + e.getMessage());
+                log.warn("Error during WireMock cleanup: " + e.getMessage());
             }
         }
 
