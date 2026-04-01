@@ -30,7 +30,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
-import org.testng.annotations.AfterSuite;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Factory;
@@ -360,30 +359,16 @@ public class GuardrailTestCase extends APIMIntegrationBaseTest {
 
         try {
             if (sourceTomlPath != null && !Files.exists(Paths.get(sourceTomlPath))) {
-                cleanupFailures.add("temporary Guardrail config file was deleted before suite teardown");
+                cleanupFailures.add("temporary Guardrail config file was deleted before class teardown");
             }
         } catch (Exception e) {
             recordCleanupFailure(cleanupFailures, "verify temporary Guardrail config files", e);
         }
 
-        if (!cleanupFailures.isEmpty()) {
-            Assert.fail("Guardrail cleanup failed: " + String.join(" | ", cleanupFailures));
-        }
-    }
-
-    @AfterSuite(alwaysRun = true)
-    public void restoreGuardrailConfigurationAfterSuite() throws Exception {
-        List<String> cleanupFailures = new ArrayList<>();
-
         try {
-            if (serverConfigurationManager != null && serverRestartedWithGuardrailConfig) {
-                serverConfigurationManager.restoreToLastConfiguration();
-                serverRestartedWithGuardrailConfig = false;
-                super.init(userMode);
-                reloadSharedGatewayTestArtifactsAfterServerRestart();
-            }
+            restoreGuardrailConfigurationAfterRestart();
         } catch (Exception e) {
-            recordCleanupFailure(cleanupFailures, "restore API Manager configuration after suite", e);
+            recordCleanupFailure(cleanupFailures, "restore API Manager configuration after Guardrail test", e);
         }
 
         try {
@@ -393,8 +378,19 @@ public class GuardrailTestCase extends APIMIntegrationBaseTest {
         }
 
         if (!cleanupFailures.isEmpty()) {
-            Assert.fail("Guardrail suite teardown failed: " + String.join(" | ", cleanupFailures));
+            Assert.fail("Guardrail cleanup failed: " + String.join(" | ", cleanupFailures));
         }
+    }
+
+    private void restoreGuardrailConfigurationAfterRestart() throws Exception {
+        if (serverConfigurationManager == null || !serverRestartedWithGuardrailConfig) {
+            return;
+        }
+
+        serverConfigurationManager.restoreToLastConfiguration();
+        serverRestartedWithGuardrailConfig = false;
+        super.init(userMode);
+        reloadSharedGatewayTestArtifactsAfterServerRestart();
     }
 
     private void ensurePortIsReleased(int port) {
