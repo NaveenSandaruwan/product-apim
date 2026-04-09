@@ -1,15 +1,22 @@
 name: APIM builder
 
 on:
+  push:
+    branches:
+      - master
+      - semantictoolfilteringtest
   pull_request:
     branches:
       - master
-  workflow_dispatch:
-    branches:
-      - master
+  workflow_dispatch: # Keeps the manual run button enabled
+
 concurrency:
-  group: ${{ github.event.number }}
+  # Using github.ref for pushes ensures separate runs for different branches
+  # Using github.event.number ensures PR updates cancel old runs
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
+
+# ... rest of your jobs (build, run-benchmark-test, etc.)
 jobs:
   build:
     runs-on: ubuntu-latest
