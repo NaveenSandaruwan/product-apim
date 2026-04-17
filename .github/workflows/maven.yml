@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - master
-      - semantictoolfilteringtest
+      - semantictoolfilteringtest2
   pull_request:
     branches:
       - master
